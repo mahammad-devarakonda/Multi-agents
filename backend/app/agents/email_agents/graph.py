@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 from typing import Dict, Any, Optional
 from langgraph.graph import StateGraph, START, END
-from langgraph_checkpoint.memory import MemorySaver  # type: ignore[import-untyped, import-not-found]
+from langgraph.checkpoint.memory import MemorySaver
 from app.agents.email_agents.state import EmailAgentState
 from app.agents.email_agents.node import (
     router_node,
@@ -53,9 +53,7 @@ def create_email_agent_graph(checkpointer=None):
 
     # Add edges
     workflow.add_edge(START, "router")
-    workflow.add_conditional_edges(
-        "router",
-        route_intent,
+    workflow.add_conditional_edges( "router", route_intent,
         {
             "send_email": "send_email",
             "revise_draft": "revise_draft",
