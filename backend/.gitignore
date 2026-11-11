@@ -1,0 +1,65 @@
+# ===============================
+# Environments & Secrets
+# ===============================
+.env
+.env.*
+!.env.example
+credentials.json
+token.json
+**/token.json
+client_secret*.json
+
+# ===============================
+# Virtual Environments
+# ===============================
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ===============================
+# Python Caches & Bytecode
+# ===============================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ===============================
+# Local Databases & Storage
+# ===============================
+*.db
+*.sqlite
+*.sqlite3
+app.db
+
+# ===============================
+# Logs & Temporary Files
+# ===============================
+*.log
+logs/
+*.tmp
+*.temp
+
+# ===============================
+# IDE & Editor Configurations
+# ===============================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+
+# ===============================
+# OS Specific Files
+# ===============================
+.DS_Store
+Thumbs.db
+desktop.ini
+
