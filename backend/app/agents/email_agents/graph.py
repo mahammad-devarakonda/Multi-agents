@@ -1,6 +1,16 @@
 import sys
 from pathlib import Path
+
+# Ensure backend root is in sys.path and load environment variables
+BACKEND_DIR = Path(__file__).resolve().parents[3]
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
+
+from dotenv import load_dotenv
+load_dotenv(BACKEND_DIR / ".env")
+
 from typing import Dict, Any, Optional
+from langsmith import traceable
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import MemorySaver
 from app.agents.email_agents.state import EmailAgentState
@@ -103,6 +113,7 @@ class EmailAgentSession:
             "final_response": None,
         }
 
+    @traceable(name="Autonomous Email Agent Turn", run_type="chain")
     def process_message(self, user_input: str) -> str:
         """Processes a user input message and returns the agent's response."""
         new_messages = [{"role": "user", "content": user_input}]

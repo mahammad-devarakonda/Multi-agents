@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional, Tuple, List
 from dotenv import load_dotenv
 from groq import Groq
+from langsmith import traceable
 
 # Ensure backend root is in sys.path
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -85,6 +86,7 @@ def get_selected_model() -> str:
     return model
 
 
+@traceable(name="Groq LLM (JSON)", run_type="llm")
 def call_llm_json(prompt: str, user_content: str, model: Optional[str] = None) -> Dict[str, Any]:
     """Shared helper: calls Groq LLM with automatic fallback switching across available models."""
     global _CACHED_MODEL
@@ -139,6 +141,7 @@ def call_llm_json(prompt: str, user_content: str, model: Optional[str] = None) -
     return {}
 
 
+@traceable(name="Groq LLM (Text)", run_type="llm")
 def call_llm_text(prompt: str, user_content: str, model: Optional[str] = None, temperature: float = 0.5) -> str:
     """Shared helper: calls Groq LLM with automatic fallback switching across available models."""
     global _CACHED_MODEL

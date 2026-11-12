@@ -11,6 +11,7 @@ import json
 import asyncio
 from dotenv import load_dotenv
 from groq import Groq
+from langsmith import traceable
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
@@ -53,6 +54,7 @@ def mcp_tool_to_groq_schema(tool) -> dict:
         }
     }
 
+@traceable(name="Gmail MCP Agent Turn", run_type="chain")
 async def run_agent_turn(client: Groq, model: str, session: ClientSession, conversation_history: list):
     """Handles an agent turn with Groq LLM, including tool calling via the Gmail MCP Server."""
     tools_list = await session.list_tools()

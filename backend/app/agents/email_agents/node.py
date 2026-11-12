@@ -15,6 +15,15 @@ from app.agents.email_agents.prompts import (
     REVISE_PROMPT,
 )
 from app.mcp import gmail_mcp_server
+from langsmith import traceable
+
+# Traced MCP Tool wrappers for LangSmith visibility
+mcp_search_emails = traceable(gmail_mcp_server.search_emails, name="gmail_search_emails", run_type="tool")
+mcp_read_email = traceable(gmail_mcp_server.read_email, name="gmail_read_email", run_type="tool")
+mcp_read_thread = traceable(gmail_mcp_server.read_thread, name="gmail_read_thread", run_type="tool")
+mcp_get_followup_candidates = traceable(gmail_mcp_server.get_followup_candidates, name="gmail_get_followup_candidates", run_type="tool")
+mcp_send_email = traceable(gmail_mcp_server.send_email, name="gmail_send_email", run_type="tool")
+mcp_reply_to_email = traceable(gmail_mcp_server.reply_to_email, name="gmail_reply_to_email", run_type="tool")
 
 
 def print_log(agent: str, message: str):
@@ -106,7 +115,7 @@ def read_emails_node(state: EmailAgentState) -> Dict[str, Any]:
     """Searches and reads emails using Gmail MCP tools and produces a readable summary."""
     query = state.get("search_query") or "is:unread"
     print_log("Reader Agent", f"Searching Gmail with query: '{query}'...")
-    raw_emails = gmail_mcp_server.search_emails(query=query, max_results=5)
+    raw_emails = mcp_search_emails(query=query, max_results=5)
 
     if not raw_emails or (len(raw_emails) == 1 and "error" in raw_emails[0]):
         error_msg = raw_emails[0].get("error") if raw_emails else "No emails found"
@@ -121,7 +130,7 @@ def read_emails_node(state: EmailAgentState) -> Dict[str, Any]:
     for em in raw_emails[:3]:
         msg_id = em.get("id")
         if msg_id:
-            full = gmail_mcp_server.read_email(msg_id)
+            full = mcp_read_email(msg_id)
             if "error" not in full:
                 detailed_emails.append(full)
             else:
@@ -197,11 +206,11 @@ def draft_reply_node(state: EmailAgentState) -> Dict[str, Any]:
     if emails:
         target_msg = emails[0]
     else:
-        results = gmail_mcp_server.search_emails(query="is:unread", max_results=3)
+        results = mcp_search_emails(query="is:unread", max_results=3)
         if not results or "error" in results[0]:
-            results = gmail_mcp_server.search_emails(query="", max_results=3)
+            results = mcp_search_emails(query="", max_results=3)
         if results and "error" not in results[0]:
-            target_msg = gmail_mcp_server.read_email(results[0]["id"])
+            target_msg = mcp_read_email(results[0]["id"])
 
     if not target_msg or "error" in target_msg:
         print_log("Replier Agent", "Could not locate target email to reply to.")
@@ -213,7 +222,7 @@ def draft_reply_node(state: EmailAgentState) -> Dict[str, Any]:
     thread_context = target_msg
     if thread_id:
         print_log("Replier Agent", f"Reading full thread history for thread ID: {thread_id}...")
-        t_data = gmail_mcp_server.read_thread(thread_id)
+        t_data = mcp_read_thread(thread_id)
         if "error" not in t_data:
             thread_context = t_data
 
@@ -254,7 +263,7 @@ def draft_reply_node(state: EmailAgentState) -> Dict[str, Any]:
 def detect_followups_node(state: EmailAgentState) -> Dict[str, Any]:
     """Finds sent emails waiting for a response, drafts a follow-up, and seeks human confirmation."""
     print_log("Follow-up Agent", "Scanning sent emails waiting for a response...")
-    candidates = gmail_mcp_server.get_followup_candidates(max_results=5)
+    candidates = mcp_get_followup_candidates(max_results=5)
 
     if not candidates or (len(candidates) == 1 and "error" in candidates[0]):
         print_log("Follow-up Agent", "No pending threads found.")
@@ -266,7 +275,7 @@ def detect_followups_node(state: EmailAgentState) -> Dict[str, Any]:
     thread_id = candidate.get("threadId")
     print_log("Follow-up Agent", f"Candidate identified: To {candidate.get('to')} on '{candidate.get('subject')}'")
 
-    thread_info = gmail_mcp_server.read_thread(thread_id) if thread_id else candidate
+    thread_info = mcp_read_thread(thread_id) if thread_id else candidate
     user_msg = state.get("messages", [])[-1]["content"] if state.get("messages") else ""
 
     print_log("Follow-up Agent", "Drafting polite reminder...")
@@ -359,14 +368,14 @@ def send_email_node(state: EmailAgentState) -> Dict[str, Any]:
 
     try:
         if action_type in ["reply", "followup"] and message_id:
-            result = gmail_mcp_server.reply_to_email(
+            result = mcp_reply_to_email(
                 message_id=message_id,
                 body=body,
                 to=to,
                 subject=subject
             )
         else:
-            result = gmail_mcp_server.send_email(
+            result = mcp_send_email(
                 to=to,
                 subject=subject,
                 body=body
